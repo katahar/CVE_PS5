@@ -20,7 +20,8 @@ import os
 import numpy as np
 import random as rand
 
-
+def get_roundess(area, perimeter):
+    return (4*np.pi*area)/(perimeter*perimeter)
 
 # get file input
 print("Greetings! What photo would you like to edit? Your options are: ")
@@ -40,24 +41,30 @@ input_file = input_file[:-4]
 k_e = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
 k_e_sm= cv2.getStructuringElement(cv2.MORPH_RECT, (1,1))
 # blobs = cv2.morphologyEx(img, cv2.MORPH_OPEN, k_e)
-blobs = cv2.dilate(cv2.bitwise_not(img), k_e)
+blobs = cv2.dilate(cv2.bitwise_not(img), k_e) #need to invert for dilation/erosion operations
 blobs = cv2.erode(blobs, k_e_sm, iterations=3 )
-blobs = cv2.bitwise_not(blobs)
+blobs = cv2.bitwise_not(blobs) #inverting 
 
 # identifying contours
 colored_contours = 255*np.ones((blobs.shape[0], blobs.shape[1],3), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
 ret, thresh = cv2.threshold(cv2.bitwise_not(blobs), 127, 255, 0)
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
 # drawing with random colors
-# print(hierarchy)
-print(len(contours))
-
 # cv2.drawContours(colored_contours, contours, -1,(rand.randint(0, 255), rand.randint(0, 255), rand.randint(0, 255)) ,  thickness=1)
-
 for c in range(len(contours)):
-    # if(c!=0):
     cv2.drawContours(colored_contours, contours, c,(rand.randint(0, 255), rand.randint(0, 255), rand.randint(0, 255)) ,  thickness=cv2.FILLED)
-# (rand.randint(0, 255), rand.randint(0, 255), rand.randint(0, 255))
+
+
+candidates = 255*np.ones((blobs.shape[0], blobs.shape[1],1), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
+# identifying candidate cracks
+for c in range(len(contours)):
+    temp_contour = contours[c]
+    area = cv2.contourArea(temp_contour)
+    perimeter = cv2.arcLength(temp_contour,True)
+    print(str(c) + ": " + str(area) + " " + str(perimeter) + " " + str(get_roundess(area,perimeter)))
+    if(get_roundess(area,perimeter) < 0.2):
+        cv2.drawContours(candidates, contours, c,(0) ,  thickness=cv2.FILLED)
 
 
 # Thinning, last step
@@ -82,14 +89,17 @@ for c in range(len(contours)):
 cv2.namedWindow("input", cv2.WINDOW_NORMAL )
 cv2.namedWindow("blobs", cv2.WINDOW_NORMAL )
 cv2.namedWindow("contours", cv2.WINDOW_NORMAL )
+cv2.namedWindow("candidates", cv2.WINDOW_NORMAL )
 
 
 cv2.imshow("input", img)
 cv2.imshow("blobs", blobs)
 cv2.imshow("contours", colored_contours)
+cv2.imshow("candidates", candidates)
+
 
 cv2.imwrite(input_file+"-blobs"+extension, blobs)
-# cv2.imwrite(input_file+"-contours"+extension, colored_contours)
+cv2.imwrite(input_file+"-contours"+extension, colored_contours)
 # cv2.imwrite(input_file+"-cracks"+extension, thin)
 
 
