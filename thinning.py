@@ -43,11 +43,11 @@ k_e_sm= cv2.getStructuringElement(cv2.MORPH_RECT, (1,1))
 # blobs = cv2.morphologyEx(img, cv2.MORPH_OPEN, k_e)
 blobs = cv2.dilate(cv2.bitwise_not(img), k_e) #need to invert for dilation/erosion operations
 blobs = cv2.erode(blobs, k_e_sm, iterations=3 )
-blobs = cv2.bitwise_not(blobs) #inverting 
+# blobs = cv2.bitwise_not(blobs) #inverting 
 
 # identifying contours
-colored_contours = 255*np.ones((blobs.shape[0], blobs.shape[1],3), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
-ret, thresh = cv2.threshold(cv2.bitwise_not(blobs), 127, 255, 0)
+colored_contours = np.zeros((blobs.shape[0], blobs.shape[1],3), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
+ret, thresh = cv2.threshold(blobs, 127, 255, 0)
 contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
 # drawing with random colors
@@ -56,15 +56,15 @@ for c in range(len(contours)):
     cv2.drawContours(colored_contours, contours, c,(rand.randint(0, 255), rand.randint(0, 255), rand.randint(0, 255)) ,  thickness=cv2.FILLED)
 
 
-candidates = 255*np.ones((blobs.shape[0], blobs.shape[1],1), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
+candidates = np.zeros((blobs.shape[0], blobs.shape[1],1), dtype=np.uint8) #cv2.cvtColor(blobs,cv2.COLOR_GRAY2BGR)
 # identifying candidate cracks
 for c in range(len(contours)):
     temp_contour = contours[c]
     area = cv2.contourArea(temp_contour)
     perimeter = cv2.arcLength(temp_contour,True)
-    print(str(c) + ": " + str(area) + " " + str(perimeter) + " " + str(get_roundess(area,perimeter)))
+    # print(str(c) + ": " + str(area) + " " + str(perimeter) + " " + str(get_roundess(area,perimeter)))
     if(get_roundess(area,perimeter) < 0.2):
-        cv2.drawContours(candidates, contours, c,(0) ,  thickness=cv2.FILLED)
+        cv2.drawContours(candidates, contours, c, (255),  thickness=cv2.FILLED)
 
 
 # Thinning, last step
